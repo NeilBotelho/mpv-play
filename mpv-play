@@ -34,9 +34,6 @@ Previous(){
 	[ -n "$response" ] && notify-send "Playing previous"
 }
 
-# GeneratePlaylist(){
-
-# }
 List(){
 	numTracks=$(echo '{ "command": ["get_property","playlist-count"] }' |socat - $SOCKETFILE|cut -d, -f1|cut -d: -f2)
 	currPlaying=$(echo "{ \"command\": [\"get_property\",\"playlist-pos\"]}" |socat - $SOCKETFILE|cut -d: -f2|cut -d, -f1)
@@ -133,7 +130,6 @@ for i in $@;do
 		notify-send "Added $name"
 	fi
 done
-# fi 
 
 restoreIFS
 
