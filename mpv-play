@@ -1,0 +1,139 @@
+#!/bin/sh
+SOCKETFILE="/tmp/mpvsocket"
+verbose=""
+SAVEIFS=$IFS
+restoreIFS(){
+    IFS=$SAVEIFS
+}
+
+changeIFS(){
+	# set  Field separator
+	IFS=$(printf "\n\b")
+}
+
+#Trap in case of exit
+trap restoreIFS INT
+
+Pause(){
+	response=$(echo '{ "command": ["set_property", "pause", true] }' |socat - $SOCKETFILE|grep "success")
+	[ -n "$response" ] && notify-send "Playback paused"
+}
+
+Resume(){
+	response=$(echo '{ "command": ["set_property", "pause", false] }' |socat - $SOCKETFILE|grep "success")
+	[ -n "$response" ] && notify-send "Playback resumed"
+}
+
+Next(){
+	response=$(echo '{ "command": ["playlist-next"] }' |socat - $SOCKETFILE|grep "success")
+	[ -n "$response" ] && notify-send "Playing next"
+}
+
+Previous(){
+	response=$(echo '{ "command": ["playlist-prev"] }' |socat - $SOCKETFILE|grep "success")
+	[ -n "$response" ] && notify-send "Playing previous"
+}
+
+# GeneratePlaylist(){
+
+# }
+List(){
+	numTracks=$(echo '{ "command": ["get_property","playlist-count"] }' |socat - $SOCKETFILE|cut -d, -f1|cut -d: -f2)
+	currPlaying=$(echo "{ \"command\": [\"get_property\",\"playlist-pos\"]}" |socat - $SOCKETFILE|cut -d: -f2|cut -d, -f1)
+
+	for i in $(seq 0 $numTracks);do
+
+		currIndicator=""
+		if [ $i -eq $currPlaying ];then
+			currIndicator="*"
+		fi
+
+		response=$(echo "{ \"command\": [\"get_property\",\"playlist/$i/filename\"]}" |socat - $SOCKETFILE)
+		success=$(echo "$response"|grep "success")
+		
+		if [ -n "$success" ];then
+			filename=$(echo "$response"|cut -d: -f2|cut -d\" -f2|rev|cut -d/ -f1|rev)
+			echo "$currIndicator$i) $filename"
+		fi
+
+	done
+}
+
+SkipTo(){
+	numTracks=$(echo '{ "command": ["get_property","playlist-count"] }' |socat - $SOCKETFILE|cut -d, -f1|cut -d: -f2)
+	isInt=$(echo "$1" | grep "^-\?[0-9]*$")
+	if [ -n "$isInt" ] &&  [ $1 -ge 0 ] && [ $1 -lt $numTracks ];then
+		response=$(echo "{ \"command\": [\"playlist-play-index\", \"$1\"] }" |socat - $SOCKETFILE|grep "success")
+		[ -n "$response" ] && echo "Skipped to $1 "
+	else
+		echo "Invalid playlist index"
+	fi
+
+}
+
+DeleteAt(){
+	numTracks=$(echo '{ "command": ["get_property","playlist-count"] }' |socat - $SOCKETFILE|cut -d, -f1|cut -d: -f2)
+	isInt=$(echo "$1" | grep "^-\?[0-9]*$")
+	if [ -n "$isInt" ] && [ $1 -ge 0 ] && [ $1 -lt $numTracks ];then
+		response=$(echo "{ \"command\": [\"playlist-remove\", \"$1\"] }" |socat - $SOCKETFILE|grep "success")
+		[ -n "$response" ] && echo "Removed to $1 "
+	else
+		echo "Invalid playlist index"
+	fi
+
+}
+case $1 in
+	-v)verbose="true";;
+	-P|--pause)
+		Pause
+		exit;;
+	-R|--resume)
+		Resume
+		exit;;
+	-n|--next)
+		Next
+		exit;;
+	-p|--previous)
+		Previous
+		exit;;
+	-l|--list)
+		List
+		exit;;
+	-s|--skip-to)
+		SkipTo $2
+		exit;;
+	-d|--delete)
+		DeleteAt $2
+		exit;;
+	-e|--exit) 
+		response=$(echo '{ "command": ["stop"] }' |socat - $SOCKETFILE)
+		exit;;
+	*);;
+esac
+
+exists=$(pgrep mpv)
+
+# Main function
+changeIFS
+
+for i in $@;do
+	if [ "$i" = "$1" ] && [ -z "$exists" ];then
+		mpv --no-terminal --input-ipc-server=$SOCKETFILE $i &
+		disown
+		response="success"
+		sleep 2
+	else
+			i=$(readlink --canonicalize $i)
+			response=$(echo "{ command: [ \"loadfile\", \"$i\", \"append\" ] }" |socat - $SOCKETFILE)
+			response=$(echo "$response"|grep "success")
+	fi
+
+	if [ -n "$response" ];then
+		name=$(echo "$i"|rev|cut -d/ -f1|rev)
+		notify-send "Added $name"
+	fi
+done
+# fi 
+
+restoreIFS
+
