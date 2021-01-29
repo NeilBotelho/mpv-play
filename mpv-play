@@ -24,6 +24,21 @@ Resume(){
 	[ -n "$response" ] && notify-send "Playback resumed"
 }
 
+TogglePlayback(){
+	response=$(echo '{ "command": ["get_property", "pause"] }' |socat - $SOCKETFILE)
+	success=$(echo "$response"|grep "success")
+	paused=$(echo "$response"|grep "true")
+	if [  "$success" ];then
+		if [  "$paused" ];then
+			Resume
+		else
+			Pause
+		fi
+	else
+		echo "Error getting property: 'pause'"
+	fi
+}
+
 Next(){
 	response=$(echo '{ "command": ["playlist-next"] }' |socat - $SOCKETFILE|grep "success")
 	[ -n "$response" ] && notify-send "Playing next"
@@ -88,6 +103,7 @@ usage(){
 	echo "convenience wrapper for mpv"
 	echo "-P, --pause    pause playback"
 	echo "-R, --resume   resume playback"
+	echo "-T, --toggle-pause   resume playback"
 	echo "-n, --next     skip to next track"
 	echo "-p, --previous go back one track"
 	echo "-l, --list     List items in queue"
@@ -104,6 +120,9 @@ case $1 in
 		exit;;
 	-R|--resume)
 		Resume
+		exit;;
+	-T|--toggle-pause)
+		TogglePlayback
 		exit;;
 	-n|--next)
 		Next
