@@ -113,6 +113,35 @@ usage(){
 	echo "-v             verbose"
 	
 }
+
+main(){
+	# Main function
+	for i in $@;do
+		i=$(readlink --canonicalize $i)
+		if [ -f "$i" ];then	
+			response=$(echo "{ command: [ \"loadfile\", \"$i\", \"append\" ] }" |socat - $SOCKETFILE 2>/dev/null)
+			# If its the first song, then echoing the ipc server will fail, so you
+			# have to start an mpv instane in the background that uses the ipc server
+			if [  $? -ne 0 ];then
+				mpv --no-terminal --input-ipc-server=$SOCKETFILE $i &
+				disown
+				response="success"
+				sleep 2
+			fi
+			response=$(echo "$response"|grep "success")
+		else
+			response=""
+			notify-send --urgency=CRITICAL --expire-time=5000 "FileNotFound: $i"
+		fi
+
+		if [ -n "$response" ];then
+			name=$(echo "$i"|rev|cut -d/ -f1|rev)
+			notify-send "Added $name"
+		fi
+	done
+}
+
+changeIFS
 case $1 in
 	-v)verbose="true";;
 	-P|--pause)
@@ -142,32 +171,11 @@ case $1 in
 	-e|--exit) 
 		response=$(echo '{ "command": ["stop"] }' |socat - $SOCKETFILE)
 		exit;;
-	*)usage;;
+	*)  if [ -f "$1" ];then
+			main $@					
+			echo "main"
+		else
+			usage
+		fi;;
 esac
-
-exists=$(pgrep mpv)
-
-# Main function
-changeIFS
-
-for i in $@;do
-	if [ "$i" = "$1" ] && [ -z "$exists" ];then
-		mpv --no-terminal --input-ipc-server=$SOCKETFILE $i &
-		disown
-		response="success"
-		sleep 2
-	else
-			i=$(readlink --canonicalize $i)
-			response=$(echo "{ command: [ \"loadfile\", \"$i\", \"append\" ] }" |socat - $SOCKETFILE)
-			response=$(echo "$response"|grep "success")
-	fi
-
-	if [ -n "$response" ];then
-		name=$(echo "$i"|rev|cut -d/ -f1|rev)
-		notify-send "Added $name"
-	fi
-done
-# fi 
-
 restoreIFS
-
