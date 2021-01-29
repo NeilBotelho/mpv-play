@@ -1,4 +1,3 @@
 # TODO
 1. List function (-l or --list) doesn't get names if url are provided
-1. Currently mpv-play wont work if there's an instance of mpv running.
 
