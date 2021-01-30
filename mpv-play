@@ -122,7 +122,7 @@ main(){
 			response=$(echo "{ command: [ \"loadfile\", \"$i\", \"append\" ] }" |socat - $SOCKETFILE 2>/dev/null)
 			# If its the first song, then echoing the ipc server will fail, so you
 			# have to start an mpv instane in the background that uses the ipc server
-			if [  $? -ne 0 ];then
+			if [  $? -ne 0 ] || [ -z "$response" ];then
 				mpv --no-terminal --input-ipc-server=$SOCKETFILE $i &
 				disown
 				response="success"
