@@ -173,7 +173,6 @@ case $1 in
 		exit;;
 	*)  if [ -f "$1" ];then
 			main $@					
-			echo "main"
 		else
 			usage
 		fi;;
