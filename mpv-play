@@ -101,16 +101,15 @@ DeleteAt(){
 usage(){
 	echo "USAGE: play [OPTIONS] filename"
 	echo "convenience wrapper for mpv"
-	echo "-P, --pause    pause playback"
-	echo "-R, --resume   resume playback"
-	echo "-T, --toggle-pause   resume playback"
-	echo "-n, --next     skip to next track"
-	echo "-p, --previous go back one track"
-	echo "-l, --list     List items in queue"
-	echo "-s --skip-to   Skip to ith entry in queue"
-	echo "-d, --delete   Remove the ith entry from queu"
-	echo "-e, --exit     Close player"
-	echo "-v             verbose"
+	echo "-P, --pause          pause playback"
+	echo "-R, --resume         resume playback"
+	echo "-T, --toggle-pause   toggle pause"
+	echo "-n, --next           skip to next track"
+	echo "-p, --previous       go back one track"
+	echo "-l, --list           List items in queue"
+	echo "-s --skip-to         Skip to ith entry in queue"
+	echo "-d, --delete         Remove the ith entry from queu"
+	echo "-e, --exit           Close player"
 	
 }
 
