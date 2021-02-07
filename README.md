@@ -14,3 +14,6 @@ This program uses mpv's ipc server protocol to communicate with the running inst
 ## Caveats
 The main caveat with mpv-play is that pausing and playing are done through the command line. So to pause you need to issue ```mpv-play -P``` rather than just pressing your hotkey if you were normally using mpv. I map the play and pause commands to hotkeys to get around this, but if you aren't comfortable with setting hotkeys you will have to use the command line to pause and resume
 
+
+## Requirements
+The only requirement is ```socat```
